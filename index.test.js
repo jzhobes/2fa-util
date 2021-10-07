@@ -16,7 +16,6 @@ describe('2fa-util', () => {
     });
 
     it('does not specify the issuer in the otpauth url if not provided', async () => {
-      const asdf = await generateSecret('John Doe', 'Company');
       const {otpauth} = await generateSecret('foobar');
       expect(otpauth).toMatch(/otpauth:\/\/totp\/foobar:foobar\?secret=(.+)&period=30&digits=6&algorithm=SHA1/);
     });
