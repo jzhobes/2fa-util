@@ -1,5 +1,4 @@
-const {authenticator} = require('otplib');
-const {generateSecret, verify} = require('./index');
+const {generateSecret, generate, verify} = require('./index');
 
 describe('2fa-util', () => {
   describe('generateSecret', () => {
@@ -32,10 +31,18 @@ describe('2fa-util', () => {
   });
 
   describe('verify', () => {
+    it('errors if options argument is not an object', async () => {
+      const {secret} = await generateSecret('bar', 'foo');
+      const token = generate(secret);
+
+      expect(() => verify(token, secret, 'test')).toThrow('Invalid options.');
+    });
+
     it('verifies to true on a valid token', async () => {
       const {secret} = await generateSecret('bar', 'foo');
+      const token = generate(secret);
 
-      expect(verify(authenticator.generate(secret), secret)).toBe(true);
+      expect(verify(token, secret)).toBe(true);
     });
   });
 });

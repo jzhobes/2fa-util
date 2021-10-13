@@ -29,13 +29,31 @@ async function generateSecret(label, issuer) {
 /**
  * @param {string} token
  * @param {string} secret
+ * @param {Object} [options]
  * @return {boolean}
  */
-function verify(token, secret) {
-  return authenticator.verify({token, secret});
+function verify(token, secret, options = {}) {
+  if (options && typeof options !== 'object') {
+    throw new Error('Invalid options.');
+  }
+  return authenticator.create({
+    ...authenticator.allOptions(),
+    ...options,
+  }).verify({token, secret});
+}
+
+/**
+ * Generates the 6-digit token.
+ *
+ * @param {string} secret
+ * @return {string}
+ */
+function generate(secret) {
+  return authenticator.generate(secret);
 }
 
 module.exports = {
   generateSecret,
+  generate,
   verify,
 };
