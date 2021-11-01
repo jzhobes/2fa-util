@@ -24,15 +24,15 @@
     "qrcode": "^1.4.4"
   },
   "devDependencies": {
-    "eslint": "^7.32.0",
-    "eslint-plugin-jest": "^24.5.2",
-    "jest": "^27.2.4"
+    "eslint": "^8.1.0",
+    "eslint-plugin-jest": "^25.2.2",
+    "jest": "^27.3.1"
   },
   "resolutions": {
     "ansi-regex": "^5.0.1"
   },
   "scripts": {
-    "lint": "eslint *.js --format table",
+    "lint": "eslint *.js --format stylish",
     "test": "jest"
   }
 }
