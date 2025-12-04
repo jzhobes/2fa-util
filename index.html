@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2fa-util | Simple, Secure, & Lightweight</title>
+    <meta name="description" content="A lightweight, professional utility to generate two-factor TOTP secrets with QR codes.">
+    <link rel="icon" type="image/png" href="favicon.png">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://jzhobes.github.io/2fa-util/">
+    <meta property="og:title" content="2fa-util | Simple, Secure, & Lightweight">
+    <meta property="og:description" content="A lightweight, professional utility to generate two-factor TOTP secrets with QR codes.">
+    <meta property="og:image" content="https://jzhobes.github.io/2fa-util/social-preview.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://jzhobes.github.io/2fa-util/">
+    <meta property="twitter:title" content="2fa-util | Simple, Secure, & Lightweight">
+    <meta property="twitter:description" content="A lightweight, professional utility to generate two-factor TOTP secrets with QR codes.">
+    <meta property="twitter:image" content="https://jzhobes.github.io/2fa-util/social-preview.png">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/@otplib/preset-browser@12.0.1/buffer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@otplib/preset-browser@12.0.1/index.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+
+    <style>
+        :root {
+            /* Light Theme Defaults */
+            --bg-body: #f8fafc;
+            --bg-card: #ffffff;
+            --bg-header: #ffffff;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --border: #e2e8f0;
+            --input-bg: #ffffff;
+            --success-bg: #f0fdf4;
+            --success-text: #15803d;
+            --success-border: #bbf7d0;
+            --error-bg: #fef2f2;
+            --error-text: #b91c1c;
+            --error-border: #fecaca;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --radius: 8px;
+            --code-bg: #1e293b;
+            --btn-github-bg: #24292f;
+            --btn-github-hover: #1a1f24;
+            --btn-github-text: #ffffff;
+        }
+
+        [data-theme="dark"] {
+            /* Dark Theme Overrides */
+            --bg-body: #0f172a;
+            --bg-card: #1e293b;
+            --bg-header: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --primary: #3b82f6;
+            --primary-dark: #60a5fa;
+            --border: #334155;
+            --input-bg: #0f172a;
+            --success-bg: rgba(21, 128, 61, 0.2);
+            --success-text: #4ade80;
+            --success-border: rgba(74, 222, 128, 0.2);
+            --error-bg: rgba(185, 28, 28, 0.2);
+            --error-text: #f87171;
+            --error-border: rgba(248, 113, 113, 0.2);
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+            --code-bg: #020617;
+            --btn-github-bg: #f1f5f9;
+            --btn-github-hover: #e2e8f0;
+            --btn-github-text: #0f172a;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            line-height: 1.5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            -webkit-font-smoothing: antialiased;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Layout */
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 0 24px;
+            width: 100%;
+        }
+
+        /* Header */
+        header {
+            padding: 64px 0 48px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 48px;
+            background: var(--bg-header);
+            width: 100%;
+            max-width: 100%;
+            transition: background-color 0.3s, border-color 0.3s;
+            position: relative;
+        }
+
+        .header-content {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 0 24px;
+            position: relative;
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            position: absolute;
+            top: 0;
+            right: 24px;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 8px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .theme-toggle:hover {
+            color: var(--text-primary);
+            border-color: var(--text-secondary);
+            background: var(--bg-body);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            letter-spacing: -0.025em;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.125rem;
+            margin: 0 auto 24px;
+        }
+
+        .btn-github {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background-color: var(--btn-github-bg);
+            color: var(--btn-github-text);
+            padding: 10px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        .btn-github:hover {
+            background-color: var(--btn-github-hover);
+        }
+
+        /* Main Content */
+        main {
+            flex: 1;
+            padding-bottom: 64px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .theme-toggle {
+                top: -40px; /* Move above header on mobile if needed, or adjust padding */
+            }
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 32px;
+            box-shadow: var(--shadow-sm);
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+
+        .card h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 24px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .card h2 svg {
+            color: var(--text-secondary);
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            background: var(--input-bg);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            transition: border-color 0.15s, box-shadow 0.15s, background-color 0.3s, color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        button.action-btn {
+            width: 100%;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.15s;
+        }
+
+        button.action-btn:hover {
+            background-color: var(--primary-dark);
+        }
+
+        /* Demo Output */
+        .qr-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 220px;
+            background: var(--bg-body);
+            border-radius: var(--radius);
+            margin-top: 24px;
+            padding: 24px;
+            border: 1px solid var(--border);
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+
+        #qr-image {
+            max-width: 180px;
+            display: none;
+            mix-blend-mode: normal; /* Reset blend mode for dark theme compatibility */
+            border: 4px solid white; /* Ensure QR is visible on dark bg */
+            border-radius: 4px;
+        }
+
+        .secret-display {
+            margin-top: 16px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            background: var(--bg-card);
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            width: 100%;
+            text-align: center;
+            word-break: break-all;
+        }
+
+        /* Verification Status */
+        .status-box {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: none;
+        }
+
+        .status-box.success {
+            background: var(--success-bg);
+            color: var(--success-text);
+            border: 1px solid var(--success-border);
+        }
+
+        .status-box.error {
+            background: var(--error-bg);
+            color: var(--error-text);
+            border: 1px solid var(--error-border);
+        }
+
+        /* Code Block */
+        .install-block {
+            margin-top: 32px;
+            background: var(--code-bg);
+            border-radius: var(--radius);
+            padding: 16px;
+            color: #e2e8f0;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid var(--border);
+        }
+
+        .install-cmd {
+            display: flex;
+            gap: 8px;
+        }
+
+        .token-dim {
+            color: #94a3b8;
+        }
+
+        .token-highlight {
+            color: #38bdf8;
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px 0;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            border-top: 1px solid var(--border);
+            background: var(--bg-header);
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+
+        footer a {
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        footer a:hover {
+            color: var(--primary);
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="header-content">
+            <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                <!-- Sun Icon -->
+                <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display: none;">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+                <!-- Moon Icon -->
+                <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display: none;">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+            </button>
+
+            <h1>2fa-util</h1>
+            <p class="subtitle">A robust, lightweight utility for generating TOTP secrets and QR codes.</p>
+            <a href="https://github.com/jzhobes/2fa-util" class="btn-github" target="_blank">
+                <svg height="20" width="20" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path>
+                </svg>
+                View on GitHub
+            </a>
+        </div>
+    </header>
+
+    <div class="container">
+        <main>
+            <div class="grid">
+                <!-- Demo Section -->
+                <div class="card">
+                    <h2>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                        </svg>
+                        Generator Demo
+                    </h2>
+
+                    <div class="form-group">
+                        <label for="userLabel">Account Label</label>
+                        <input type="text" id="userLabel" value="john.doe@example.com" placeholder="e.g. user@company.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="issuer">Issuer Name</label>
+                        <input type="text" id="issuer" value="My Application" placeholder="e.g. Acme Corp">
+                    </div>
+
+                    <button class="action-btn" onclick="generateNewSecret()">Generate Secret Key</button>
+
+                    <div class="qr-container">
+                        <p id="placeholder-text" style="color: var(--text-secondary); font-size: 0.9rem;">QR Code will appear here</p>
+                        <img id="qr-image" alt="2FA QR Code">
+                        <div id="secret-display" class="secret-display" style="display:none;"></div>
+                    </div>
+                </div>
+
+                <!-- Verify Section -->
+                <div class="card">
+                    <h2>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        </svg>
+                        Verification Test
+                    </h2>
+                    <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 24px;">
+                        Scan the QR code with your authenticator app, then input the 6-digit code below to verify the implementation.
+                    </p>
+
+                    <div class="form-group">
+                        <label for="token">Authentication Token</label>
+                        <input type="text" id="token" placeholder="000 000" maxlength="6" style="letter-spacing: 2px; font-size: 1.1rem; text-align: center; font-family: 'Monaco', monospace;">
+                    </div>
+
+                    <button class="action-btn" onclick="verifyToken()">Verify Token</button>
+
+                    <div id="status-box" class="status-box"></div>
+
+                    <div class="install-block">
+                        <div class="install-cmd">
+                            <span class="token-dim">$</span>
+                            <span>npm install</span>
+                            <span class="token-highlight">2fa-util</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 2fa-util. Licensed under MIT. Maintained by <a href="https://github.com/jzhobes">John Ho</a>.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Initialize otplib
+        const { authenticator } = window.otplib;
+        let currentSecret = '';
+
+        async function generateNewSecret() {
+            const label = document.getElementById('userLabel').value || 'User';
+            const issuer = document.getElementById('issuer').value || 'App';
+
+            // Generate Secret
+            currentSecret = authenticator.generateSecret();
+
+            // Generate OTPAuth URL
+            const otpauth = authenticator.keyuri(label, issuer, currentSecret);
+
+            // Generate QR Code
+            try {
+                const dataUrl = await QRCode.toDataURL(otpauth);
+
+                // Update UI
+                const img = document.getElementById('qr-image');
+                const secretDisplay = document.getElementById('secret-display');
+
+                img.src = dataUrl;
+                img.style.display = 'block';
+                document.getElementById('placeholder-text').style.display = 'none';
+
+                secretDisplay.textContent = currentSecret;
+                secretDisplay.style.display = 'block';
+
+                // Clear verification status
+                document.getElementById('status-box').className = 'status-box';
+                document.getElementById('status-box').style.display = 'none';
+                document.getElementById('token').value = '';
+            } catch (err) {
+                console.error(err);
+                alert('Error generating QR code');
+            }
+        }
+
+        function verifyToken() {
+            if (!currentSecret) {
+                alert('Please generate a secret first!');
+                return;
+            }
+
+            const token = document.getElementById('token').value.replace(/\s/g, '');
+            if (!token || token.length !== 6) {
+                alert('Please enter a valid 6-digit token');
+                return;
+            }
+
+            try {
+                const isValid = authenticator.verify({ token, secret: currentSecret });
+                const statusBox = document.getElementById('status-box');
+
+                statusBox.style.display = 'block';
+                if (isValid) {
+                    statusBox.className = 'status-box success';
+                    statusBox.textContent = 'Token verified successfully';
+                } else {
+                    statusBox.className = 'status-box error';
+                    statusBox.textContent = 'Invalid token provided';
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Error verifying token');
+            }
+        }
+
+        // Theme Handling
+        const themeToggle = document.getElementById('themeToggle');
+        const iconSun = document.querySelector('.icon-sun');
+        const iconMoon = document.querySelector('.icon-moon');
+
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+            updateIcon(theme);
+        }
+
+        function updateIcon(theme) {
+            if (theme === 'dark') {
+                iconSun.style.display = 'block';
+                iconMoon.style.display = 'none';
+            } else {
+                iconSun.style.display = 'none';
+                iconMoon.style.display = 'block';
+            }
+        }
+
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme');
+            const newTheme = current === 'dark' ? 'light' : 'dark';
+            setTheme(newTheme);
+        }
+
+        // Init Theme
+        const savedTheme = localStorage.getItem('theme');
+        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+        if (savedTheme) {
+            setTheme(savedTheme);
+        } else {
+            setTheme(systemPrefersDark ? 'dark' : 'light');
+        }
+
+        themeToggle.addEventListener('click', toggleTheme);
+
+        // Generate one on load
+        window.addEventListener('load', generateNewSecret);
+    </script>
+</body>
+</html>

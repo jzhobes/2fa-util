@@ -1,18 +1,112 @@
 # 2fa-util
-Lightweight utility to generate a two-factor TOTP secret with QR code to be used by authenticators such as Google or Microsoft Authenticator.
 
-### Usage
-```javascript
-const {generateSecret, verify} = require('2fa-util');
+![Build Status](https://github.com/jzhobes/2fa-util/actions/workflows/nodejs.yml/badge.svg)
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![NPM Version](https://img.shields.io/npm/v/2fa-util.svg)
 
-await generateSecret('John Doe', 'Company');
-// Output:
-// {
-//   qrcode: 'data:image/png;base64,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',
-//   otpauth: 'otpauth://totp/Company:John%20Doe?secret=P4IU2RIZBBFEGDYD&period=30&digits=6&algorithm=SHA1&issuer=Company',
-//   secret: 'P4IU2RIZBBFEGDYD'
-// }
+A lightweight, robust Node.js utility for generating Two-Factor Authentication (TOTP) secrets, QR codes, and verifying tokens. Compatible with Google Authenticator, Microsoft Authenticator, and Authy.
 
-await verify('<token from authenticator app>', '<secret>');
-// Output: true/false
+### [🚀 Live Demo](https://jzhobes.github.io/2fa-util/)
+
+## Features
+
+*   **Easy Setup**: Generate a secret and QR code in one function call.
+*   **Standard Compatible**: Works with any RFC 6238 compliant authenticator app.
+*   **Flexible Verification**: Supports custom windows, steps, and other `otplib` options.
+*   **Zero-Dependency (Runtime)**: Bundles necessary logic efficiently (uses `otplib` and `qrcode` under the hood).
+
+## Installation
+
+```bash
+npm install 2fa-util
 ```
+
+## Usage
+
+### Basic Example
+
+```javascript
+const { generateSecret, verify } = require('2fa-util');
+
+(async () => {
+    // 1. Generate a Secret and QR Code
+    const { secret, qrcode, otpauth } = await generateSecret('john.doe@example.com', 'MyApp');
+    
+    console.log('Secret:', secret);
+    console.log('QR Code Data URL:', qrcode); // Display this in an <img src="...">
+
+    // ... User scans QR code ...
+
+    // 2. Verify a Token
+    const userToken = '123456'; // Input from user
+    const isValid = verify(userToken, secret);
+
+    console.log('Is Valid:', isValid);
+})();
+```
+
+### Advanced Verification (Custom Options)
+
+You can pass standard `otplib` options to the `verify` function, such as `window` (for clock drift) or `step`.
+
+```javascript
+const isValid = verify(token, secret, {
+    window: 1, // Allow 1 step before/after (approx +/- 30sec)
+    step: 60   // Custom step size in seconds
+});
+```
+
+## API Reference
+
+### `generateSecret(label, [issuer])`
+
+Generates a new TOTP secret and corresponding QR code.
+
+*   **label** `(string)`: The username or account identifier (e.g., email).
+*   **issuer** `(string, optional)`: The name of your application or company.
+*   **Returns**: `Promise<Object>`
+    *   `secret`: The base32 encoded secret key.
+    *   `qrcode`: A Data URI string (base64) of the QR code image.
+    *   `otpauth`: The raw `otpauth://` URL.
+
+### `verify(token, secret, [options])`
+
+Verifies a TOTP token against a secret.
+
+*   **token** `(string)`: The 6-digit token provided by the user.
+*   **secret** `(string)`: The user's stored secret key.
+*   **options** `(Object, optional)`: Configuration object passed to `otplib`.
+*   **Returns**: `boolean` (`true` if valid, `false` otherwise).
+
+### `generate(secret)`
+
+Generates the current token for a given secret (useful for testing or dev tools).
+
+*   **secret** `(string)`: The secret key.
+*   **Returns**: `string` (The current 6-digit token).
+
+## Development
+
+Clone the repository and install dependencies:
+
+```bash
+git clone https://github.com/jzhobes/2fa-util.git
+cd 2fa-util
+npm install
+```
+
+Run tests:
+
+```bash
+npm test
+```
+
+Run linting:
+
+```bash
+npm run lint
+```
+
+## License
+
+MIT © [John Ho](https://github.com/jzhobes)

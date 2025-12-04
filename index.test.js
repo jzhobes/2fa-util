@@ -1,3 +1,4 @@
+const {authenticator} = require('otplib');
 const {generateSecret, generate, verify} = require('./index');
 
 describe('2fa-util', () => {
@@ -43,6 +44,22 @@ describe('2fa-util', () => {
       const token = generate(secret);
 
       expect(verify(token, secret)).toBe(true);
+    });
+
+    it('accepts custom options', async () => {
+      const {secret} = await generateSecret('bar', 'foo');
+      // Generate a token with a custom step of 60 seconds
+      const token = authenticator.create({
+        ...authenticator.allOptions(),
+        step: 60,
+      }).generate(secret);
+
+      // Verify should PASS with the correct option
+      expect(verify(token, secret, {step: 60})).toBe(true);
+
+      // Verify should FAIL with the default option (step: 30)
+      // This confirms that the options are actually being used
+      expect(verify(token, secret)).toBe(false);
     });
   });
 });
